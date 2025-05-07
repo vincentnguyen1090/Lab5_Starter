@@ -7,6 +7,7 @@ function init() {
   const selectElement = document.querySelector("#voice-select");
   const textElement = document.querySelector("#text-to-speak");
   const button = document.querySelector("button");
+  const faceImage = document.querySelector("#explore img")
 
   let voices = [];
 
@@ -14,18 +15,13 @@ function init() {
     selectElement.innerHTML = '<option value="select" disabled selected>Select Voice:</option>';
     voices = synth.getVoices();
 
-    for(let i = 0; i < voices.length; i++) {
+    voices.forEach(voice => {
       const option = document.createElement("option");
-      option.textContent = `${voices[i].name} (${voices[i].lang})`;
-
-      if(voices[i].default) {
-        option.textContent += " - DEFAULT";
-      }
-
-      option.setAttribute("data-lang", voices[i].lang);
-      option.setAttribute("data-name", voices[i].name);
+      option.textContent = `${voice.name} (${voice.lang})`;
+      if(voice.default) option.textContent += " - DEFAULT";
+      option.setAttribute("data-name", voice.name);
       selectElement.appendChild(option);
-    }
+    });
   }
 
   populateVoiceList();
@@ -34,15 +30,29 @@ function init() {
   }
 
   button.addEventListener("click", (event) => {
-    const utterThis = new SpeechSynthesisUtterance(textElement.value);
-    console.log(`${textElement.value}`);
-    const selectedOption = selectElement.selectedOptions[0].getAttribute("data-name");
-    for(let i = 0; i < voices.length; i++) {
-      if(voices[i].name == selectedOption) {
-        utterThis.voice = voices[i];
-      }
-    } 
+    event.preventDefault();
+    const text = textElement.value.trim();
+    if(!text) return;
+
+    const utterThis = new SpeechSynthesisUtterance(text);
+    const selectedVoiceName = selectElement.selectedOptions[0].getAttribute("data-name");
+
+    const selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
+    if (selectedVoice) utterThis.voice = selectedVoice;
     console.log("Speaking with voice:", utterThis.voice);
+
+    utterThis.onstart = () => {
+      faceImage.src = 'assets/images/smiling-open.png';
+    };
+
+    utterThis.onend = () => {
+      faceImage.src = 'assets/images/smiling.png';
+    };
+
+    utterThis.onerror = () => {
+      faceImage.src = 'assets/images/smiling.png';
+    };
+
     synth.speak(utterThis);
   });
 }
